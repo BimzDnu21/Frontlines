@@ -46,6 +46,14 @@ function ESP:GetTeam(p)
 	return p and p.Team
 end
 
+local function ToScreen(pos)
+    local screenPos, onScreen = cam:WorldToViewportPoint(pos)
+    if not onScreen or screenPos.Z < 0 then
+        return screenPos, false
+    end
+    return screenPos, true
+end
+
 function ESP:IsTeamMate(p)
     local ov = self.Overrides.IsTeamMate
 	if ov then
@@ -198,10 +206,10 @@ function boxBase:Update()
     }
 
     if ESP.Boxes then
-        local TopLeft, Vis1 = WorldToViewportPoint(cam, locs.TopLeft.p)
-        local TopRight, Vis2 = WorldToViewportPoint(cam, locs.TopRight.p)
-        local BottomLeft, Vis3 = WorldToViewportPoint(cam, locs.BottomLeft.p)
-        local BottomRight, Vis4 = WorldToViewportPoint(cam, locs.BottomRight.p)
+        local TopLeft, Vis1 = ToScreen(cam, locs.TopLeft.p)
+        local TopRight, Vis2 = ToScreen(cam, locs.TopRight.p)
+        local BottomLeft, Vis3 = ToScreen(cam, locs.BottomLeft.p)
+        local BottomRight, Vis4 = ToScreen(cam, locs.BottomRight.p)
 
         if Vis1 and Vis2 and Vis3 and Vis4 then
             self.Components.Quad.Visible = true
@@ -218,7 +226,7 @@ function boxBase:Update()
     end
 
     if ESP.Names then
-        local TagPos, Vis5 = WorldToViewportPoint(cam, locs.TagPos.p)
+        local TagPos, Vis5 = ToScreen(cam, locs.TagPos.p)
 
         if Vis5 then
             self.Components.Name.Visible = true
@@ -240,7 +248,7 @@ function boxBase:Update()
     end
     
     if ESP.Tracers then
-        local TorsoPos, Vis6 = WorldToViewportPoint(cam, locs.Torso.p)
+        local TorsoPos, Vis6 = ToScreen(cam, locs.Torso.p)
 
         if Vis6 then
             self.Components.Tracer.Visible = true
