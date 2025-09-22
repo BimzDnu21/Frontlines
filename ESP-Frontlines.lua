@@ -46,21 +46,6 @@ function ESP:GetTeam(p)
 	return p and p.Team
 end
 
-local function IsOnScreen(pos)
-    local screenPos, onScreen = cam:WorldToViewportPoint(pos)
-    if not onScreen or screenPos.Z < 0 then
-        return false
-    end
-    -- cek apakah benar-benar di dalam layar
-    if screenPos.X < 0 or screenPos.X > cam.ViewportSize.X then
-        return false
-    end
-    if screenPos.Y < 0 or screenPos.Y > cam.ViewportSize.Y then
-        return false
-    end
-    return true
-end
-
 function ESP:IsTeamMate(p)
     local ov = self.Overrides.IsTeamMate
 	if ov then
@@ -213,12 +198,12 @@ function boxBase:Update()
     }
 
     if ESP.Boxes then
-        local TopLeft = cam:WorldToViewportPoint(locs.TopLeft.p)
-        local TopRight = cam:WorldToViewportPoint(locs.TopRight.p)
-        local BottomLeft = cam:WorldToViewportPoint(locs.BottomLeft.p)
-        local BottomRight = cam:WorldToViewportPoint(locs.BottomRight.p)
+        local TopLeft, Vis1 = WorldToViewportPoint(cam, locs.TopLeft.p)
+        local TopRight, Vis2 = WorldToViewportPoint(cam, locs.TopRight.p)
+        local BottomLeft, Vis3 = WorldToViewportPoint(cam, locs.BottomLeft.p)
+        local BottomRight, Vis4 = WorldToViewportPoint(cam, locs.BottomRight.p)
 
-        if IsOnScreen(locs.TopLeft.p) or IsOnScreen(locs.TopRight.p) or IsOnScreen(locs.BottomLeft.p) or IsOnScreen(locs.BottomRight.p) then
+        if Vis1 and Vis2 and Vis3 and Vis4 then
             self.Components.Quad.Visible = true
             self.Components.Quad.PointA = Vector2.new(TopRight.X, TopRight.Y)
             self.Components.Quad.PointB = Vector2.new(TopLeft.X, TopLeft.Y)
