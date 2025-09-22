@@ -203,17 +203,15 @@ function boxBase:Update()
         local BottomLeft, Vis3 = WorldToViewportPoint(cam, locs.BottomLeft.p)
         local BottomRight, Vis4 = WorldToViewportPoint(cam, locs.BottomRight.p)
 
-        if self.Components.Quad then
-            if Vis1 or Vis2 or Vis3 or Vis4 then
-                self.Components.Quad.Visible = true
-                self.Components.Quad.PointA = Vector2.new(TopRight.X, TopRight.Y)
-                self.Components.Quad.PointB = Vector2.new(TopLeft.X, TopLeft.Y)
-                self.Components.Quad.PointC = Vector2.new(BottomLeft.X, BottomLeft.Y)
-                self.Components.Quad.PointD = Vector2.new(BottomRight.X, BottomRight.Y)
-                self.Components.Quad.Color = color
-            else
-                self.Components.Quad.Visible = false
-            end
+        if Vis1 and Vis2 and Vis3 and Vis4 then
+            self.Components.Quad.Visible = true
+            self.Components.Quad.PointA = Vector2.new(TopRight.X, TopRight.Y)
+            self.Components.Quad.PointB = Vector2.new(TopLeft.X, TopLeft.Y)
+            self.Components.Quad.PointC = Vector2.new(BottomLeft.X, BottomLeft.Y)
+            self.Components.Quad.PointD = Vector2.new(BottomRight.X, BottomRight.Y)
+            self.Components.Quad.Color = color
+        else
+            self.Components.Quad.Visible = false
         end
     else
         self.Components.Quad.Visible = false
@@ -221,16 +219,16 @@ function boxBase:Update()
 
     if ESP.Names then
         local TagPos, Vis5 = WorldToViewportPoint(cam, locs.TagPos.p)
-        
+
         if Vis5 then
             self.Components.Name.Visible = true
             self.Components.Name.Position = Vector2.new(TagPos.X, TagPos.Y)
             self.Components.Name.Text = self.Name
             self.Components.Name.Color = color
-            
+
             self.Components.Distance.Visible = true
             self.Components.Distance.Position = Vector2.new(TagPos.X, TagPos.Y + 14)
-            self.Components.Distance.Text = math.floor((cam.CFrame.p - cf.p).magnitude) .."m away"
+            self.Components.Distance.Text = math.floor((cam.CFrame.p - cf.p).magnitude).."m away"
             self.Components.Distance.Color = color
         else
             self.Components.Name.Visible = false
