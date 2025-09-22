@@ -46,12 +46,19 @@ function ESP:GetTeam(p)
 	return p and p.Team
 end
 
-local function ToScreen(pos)
+local function IsOnScreen(pos)
     local screenPos, onScreen = cam:WorldToViewportPoint(pos)
     if not onScreen or screenPos.Z < 0 then
-        return screenPos, false
+        return false
     end
-    return screenPos, true
+    -- cek apakah benar-benar di dalam layar
+    if screenPos.X < 0 or screenPos.X > cam.ViewportSize.X then
+        return false
+    end
+    if screenPos.Y < 0 or screenPos.Y > cam.ViewportSize.Y then
+        return false
+    end
+    return true
 end
 
 function ESP:IsTeamMate(p)
@@ -206,12 +213,12 @@ function boxBase:Update()
     }
 
     if ESP.Boxes then
-        local TopLeft, Vis1 = ToScreen(cam, locs.TopLeft.p)
-        local TopRight, Vis2 = ToScreen(cam, locs.TopRight.p)
-        local BottomLeft, Vis3 = ToScreen(cam, locs.BottomLeft.p)
-        local BottomRight, Vis4 = ToScreen(cam, locs.BottomRight.p)
+        local TopLeft = cam:WorldToViewportPoint(locs.TopLeft.p)
+        local TopRight = cam:WorldToViewportPoint(locs.TopRight.p)
+        local BottomLeft = cam:WorldToViewportPoint(locs.BottomLeft.p)
+        local BottomRight = cam:WorldToViewportPoint(locs.BottomRight.p)
 
-        if Vis1 and Vis2 and Vis3 and Vis4 then
+        if IsOnScreen(locs.TopLeft.p) or IsOnScreen(locs.TopRight.p) or IsOnScreen(locs.BottomLeft.p) or IsOnScreen(locs.BottomRight.p) then
             self.Components.Quad.Visible = true
             self.Components.Quad.PointA = Vector2.new(TopRight.X, TopRight.Y)
             self.Components.Quad.PointB = Vector2.new(TopLeft.X, TopLeft.Y)
@@ -226,7 +233,7 @@ function boxBase:Update()
     end
 
     if ESP.Names then
-        local TagPos, Vis5 = ToScreen(cam, locs.TagPos.p)
+        local TagPos, Vis5 = WorldToViewportPoint(cam, locs.TagPos.p)
 
         if Vis5 then
             self.Components.Name.Visible = true
@@ -248,7 +255,7 @@ function boxBase:Update()
     end
     
     if ESP.Tracers then
-        local TorsoPos, Vis6 = ToScreen(cam, locs.Torso.p)
+        local TorsoPos, Vis6 = WorldToViewportPoint(cam, locs.Torso.p)
 
         if Vis6 then
             self.Components.Tracer.Visible = true
