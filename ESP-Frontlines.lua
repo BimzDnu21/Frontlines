@@ -142,15 +142,8 @@ function boxBase:Remove()
 end
 
 function boxBase:Update()
-    -- ⬅️ Jangan render kalau ini local player
-    if self.Player == plr then
-        for _, v in pairs(self.Components) do
-            v.Visible = false
-        end
-        return
-    end
-
     if not self.PrimaryPart then
+        --warn("not supposed to print", self.Object)
         return self:Remove()
     end
 
@@ -171,10 +164,7 @@ function boxBase:Update()
     if self.Player and not ESP.Players then
         allow = false
     end
-    if self.IsEnabled and (
-        type(self.IsEnabled) == "string" and not ESP[self.IsEnabled] 
-        or type(self.IsEnabled) == "function" and not self:IsEnabled()
-    ) then
+    if self.IsEnabled and (type(self.IsEnabled) == "string" and not ESP[self.IsEnabled] or type(self.IsEnabled) == "function" and not self:IsEnabled()) then
         allow = false
     end
     if not workspace:IsAncestorOf(self.PrimaryPart) and not self.RenderInNil then
@@ -182,13 +172,17 @@ function boxBase:Update()
     end
 
     if not allow then
-        for _, v in pairs(self.Components) do
+        for i,v in pairs(self.Components) do
             v.Visible = false
         end
         return
     end
 
-    -- 🔽 Lanjutan sama persis kaya punyamu (box, name, distance, tracer)
+    if ESP.Highlighted == self.Object then
+        color = ESP.HighlightColor
+    end
+
+    --calculations--
     local cf = self.PrimaryPart.CFrame
     if ESP.FaceCamera then
         cf = CFrame.new(cf.p, cam.CFrame.p)
@@ -203,17 +197,67 @@ function boxBase:Update()
         Torso = cf * ESP.BoxShift
     }
 
-    -- ✅ sisanya sama kaya scriptmu: Quad, Name, Distance, Tracer
-    -- (nggak aku ubah biar tetap stabil)
-end
+    if ESP.Boxes then
+        local TopLeft, Vis1 = WorldToViewportPoint(cam, locs.TopLeft.p)
+        local TopRight, Vis2 = WorldToViewportPoint(cam, locs.TopRight.p)
+        local BottomLeft, Vis3 = WorldToViewportPoint(cam, locs.BottomLeft.p)
+        local BottomRight, Vis4 = WorldToViewportPoint(cam, locs.BottomRight.p)
 
-
-function ESP:Add(obj, options)
-    -- ⬅️ Skip kalau player = local player
-    if options.Player == plr then
-        return
+        if self.Components.Quad then
+            if Vis1 or Vis2 or Vis3 or Vis4 then
+                self.Components.Quad.Visible = true
+                self.Components.Quad.PointA = Vector2.new(TopRight.X, TopRight.Y)
+                self.Components.Quad.PointB = Vector2.new(TopLeft.X, TopLeft.Y)
+                self.Components.Quad.PointC = Vector2.new(BottomLeft.X, BottomLeft.Y)
+                self.Components.Quad.PointD = Vector2.new(BottomRight.X, BottomRight.Y)
+                self.Components.Quad.Color = color
+            else
+                self.Components.Quad.Visible = false
+            end
+        end
+    else
+        self.Components.Quad.Visible = false
     end
 
+    if ESP.Names then
+        local TagPos, Vis5 = WorldToViewportPoint(cam, locs.TagPos.p)
+        
+        if Vis5 then
+            self.Components.Name.Visible = true
+            self.Components.Name.Position = Vector2.new(TagPos.X, TagPos.Y)
+            self.Components.Name.Text = self.Name
+            self.Components.Name.Color = color
+            
+            self.Components.Distance.Visible = true
+            self.Components.Distance.Position = Vector2.new(TagPos.X, TagPos.Y + 14)
+            self.Components.Distance.Text = math.floor((cam.CFrame.p - cf.p).magnitude) .."m away"
+            self.Components.Distance.Color = color
+        else
+            self.Components.Name.Visible = false
+            self.Components.Distance.Visible = false
+        end
+    else
+        self.Components.Name.Visible = false
+        self.Components.Distance.Visible = false
+    end
+    
+    if ESP.Tracers then
+        local TorsoPos, Vis6 = WorldToViewportPoint(cam, locs.Torso.p)
+
+        if Vis6 then
+            self.Components.Tracer.Visible = true
+            self.Components.Tracer.From = Vector2.new(TorsoPos.X, TorsoPos.Y)
+            self.Components.Tracer.To = Vector2.new(cam.ViewportSize.X/2,cam.ViewportSize.Y/ESP.AttachShift)
+            self.Components.Tracer.Color = color
+        else
+            self.Components.Tracer.Visible = false
+        end
+    else
+        self.Components.Tracer.Visible = false
+    end
+end
+
+function ESP:Add(obj, options)
     if not obj.Parent and not options.RenderInNil then
         return warn(obj, "has no parent")
     end
@@ -221,13 +265,11 @@ function ESP:Add(obj, options)
     local box = setmetatable({
         Name = options.Name or obj.Name,
         Type = "Box",
-        Color = options.Color,
+        Color = options.Color --[[or self:GetColor(obj)]],
         Size = options.Size or self.BoxSize,
         Object = obj,
         Player = options.Player or plrs:GetPlayerFromCharacter(obj),
-        PrimaryPart = options.PrimaryPart or obj.ClassName == "Model" 
-            and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) 
-            or obj:IsA("BasePart") and obj,
+        PrimaryPart = options.PrimaryPart or obj.ClassName == "Model" and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) or obj:IsA("BasePart") and obj,
         Components = {},
         IsEnabled = options.IsEnabled,
         Temporary = options.Temporary,
@@ -241,35 +283,35 @@ function ESP:Add(obj, options)
 
     box.Components["Quad"] = Draw("Quad", {
         Thickness = self.Thickness,
-        Color = box.Color,
+        Color = color,
         Transparency = 1,
         Filled = false,
         Visible = self.Enabled and self.Boxes
     })
     box.Components["Name"] = Draw("Text", {
-        Text = box.Name,
-        Color = box.Color,
-        Center = true,
-        Outline = true,
+		Text = box.Name,
+		Color = box.Color,
+		Center = true,
+		Outline = true,
         Size = 19,
         Visible = self.Enabled and self.Names
-    })
-    box.Components["Distance"] = Draw("Text", {
-        Color = box.Color,
-        Center = true,
-        Outline = true,
+	})
+	box.Components["Distance"] = Draw("Text", {
+		Color = box.Color,
+		Center = true,
+		Outline = true,
         Size = 19,
         Visible = self.Enabled and self.Names
-    })
-    box.Components["Tracer"] = Draw("Line", {
-        Thickness = ESP.Thickness,
-        Color = box.Color,
+	})
+	
+	box.Components["Tracer"] = Draw("Line", {
+		Thickness = ESP.Thickness,
+		Color = box.Color,
         Transparency = 1,
         Visible = self.Enabled and self.Tracers
     })
-
     self.Objects[obj] = box
-
+    
     obj.AncestryChanged:Connect(function(_, parent)
         if parent == nil and ESP.AutoRemove ~= false then
             box:Remove()
@@ -282,12 +324,12 @@ function ESP:Add(obj, options)
     end)
 
     local hum = obj:FindFirstChildOfClass("Humanoid")
-    if hum then
+	if hum then
         hum.Died:Connect(function()
             if ESP.AutoRemove ~= false then
                 box:Remove()
             end
-        end)
+		end)
     end
 
     return box
