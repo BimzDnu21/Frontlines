@@ -260,9 +260,15 @@ end
 function ESP:Add(obj, options)
     local player = options.Player or plrs:GetPlayerFromCharacter(obj)
 
-    -- ⬅️ FIX: skip LocalPlayer biar gak ESP-in diri sendiri
-    if player == plr then
-        return
+    -- HARD FILTER: Jangan ESP-in LocalPlayer
+    if player and player == plr then
+        return nil
+    end
+    if obj == plr.Character then
+        return nil
+    end
+    if obj:IsDescendantOf(plr.Character) then
+        return nil
     end
 
     if not obj.Parent and not options.RenderInNil then
@@ -347,9 +353,9 @@ end
 local function CharAdded(char)
     local p = plrs:GetPlayerFromCharacter(char)
 
-    -- ⬅️ Tambahan: skip kalau player adalah diri sendiri
-    if not p or p == plr then 
-        return 
+    -- skip LocalPlayer dengan filter keras
+    if not p or p == plr or char == plr.Character then
+        return
     end
 
     if not char:FindFirstChild("HumanoidRootPart") then
@@ -389,6 +395,12 @@ end
 game:GetService("RunService").RenderStepped:Connect(function()
     cam = workspace.CurrentCamera
     for i,v in (ESP.Enabled and pairs or ipairs)(ESP.Objects) do
+        -- Hapus box kalau ternyata target = LocalPlayer
+        if v.Player == plr or v.Object == plr.Character or (plr.Character and v.Object:IsDescendantOf(plr.Character)) then
+            v:Remove()
+            continue
+        end
+
         if v.Update then
             local s,e = pcall(v.Update, v)
             if not s then warn("[EU]", e, v.Object:GetFullName()) end
