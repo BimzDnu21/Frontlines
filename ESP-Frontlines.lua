@@ -258,6 +258,13 @@ function boxBase:Update()
 end
 
 function ESP:Add(obj, options)
+    local player = options.Player or plrs:GetPlayerFromCharacter(obj)
+
+    -- ⬅️ FIX: skip LocalPlayer biar gak ESP-in diri sendiri
+    if player == plr then
+        return
+    end
+
     if not obj.Parent and not options.RenderInNil then
         return warn(obj, "has no parent")
     end
@@ -265,11 +272,13 @@ function ESP:Add(obj, options)
     local box = setmetatable({
         Name = options.Name or obj.Name,
         Type = "Box",
-        Color = options.Color --[[or self:GetColor(obj)]],
+        Color = options.Color,
         Size = options.Size or self.BoxSize,
         Object = obj,
-        Player = options.Player or plrs:GetPlayerFromCharacter(obj),
-        PrimaryPart = options.PrimaryPart or obj.ClassName == "Model" and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) or obj:IsA("BasePart") and obj,
+        Player = player,
+        PrimaryPart = options.PrimaryPart or obj.ClassName == "Model" 
+            and (obj.PrimaryPart or obj:FindFirstChild("HumanoidRootPart") or obj:FindFirstChildWhichIsA("BasePart")) 
+            or obj:IsA("BasePart") and obj,
         Components = {},
         IsEnabled = options.IsEnabled,
         Temporary = options.Temporary,
